@@ -26,6 +26,153 @@ Settings4:AddSlider(fn(), {
         end,
     })
 Settings4:AddDivider({MarginTop = 2, MarginBottom = 2})
+-- [SorsHub fix V20.2] applyHighJump/revertHighJump hilang saat script gabungan
+-- dipecah jadi pack (yang tersisa hanya panggilannya, sehingga toggle "High Sk8
+-- Trick" error "attempt to call a nil value"). Direkonstruksi memakai pola
+-- Actors.CurrentActors seperti fitur "Sk8 Everywhere": cari actor Veeronica
+-- milik local player, lalu kalikan field config terkait lompatan trick Sk8
+-- dengan VX_HighJumpMult. Nilai asli disimpan di getgenv().VX_HighJumpOrigValue
+-- dan dipulihkan oleh revertHighJump().
+local function vxIsHighJumpField(key)
+    if type(key) ~= "string" then return false end
+    local k = string.lower(key)
+    local match = k:find("jump") or k:find("ollie")
+        or (k:find("trick") and (k:find("power") or k:find("height") or k:find("velocity") or k:find("force")))
+    if not match then return false end
+    for _, bad in ipairs({"cooldown", "time", "duration", "cost", "stamina", "delay", "rate", "chance", "charge"}) do
+        if k:find(bad, 1, true) then return false end
+    end
+    return true
+end
+
+local function vxGetVeeronicaActor()
+    local ok, actor = pcall(function()
+        local Actors = require(game:GetService("ReplicatedStorage").Modules.Gameplay.Actors)
+        local currentActors = Actors.CurrentActors
+        local key = nil
+        while true do
+            local k, a = currentActors(nil, key)
+            if k == nil then return nil end
+            key = k
+            if a.ActorName == "Veeronica" and a.Player == game:GetService("Players").LocalPlayer then
+                return a
+            end
+        end
+    end)
+    if ok then return actor end
+    return nil
+end
+
+local function vxHighJumpContainers(actor)
+    local list = {}
+    local config = actor.Config
+    if type(config) == "table" then
+        for _, name in ipairs({"Sk8", "Sk8Trick", "Trick"}) do
+            if type(config[name]) == "table" then table.insert(list, config[name]) end
+        end
+    end
+    local behavior = actor.Behavior
+    local abilities = type(behavior) == "table" and behavior.Abilities
+    if type(abilities) == "table" then
+        for _, name in ipairs({"Sk8", "Sk8Trick", "Trick"}) do
+            if type(abilities[name]) == "table" then table.insert(list, abilities[name]) end
+        end
+    end
+    return list
+end
+
+local revertHighJump
+local function applyHighJump()
+    local g = getgenv()
+    if not g.VX_HighJumpEnabled then return end
+    local mult = tonumber(g.VX_HighJumpMult) or 2
+    local actor = vxGetVeeronicaActor()
+    if actor then
+        local tracked = g.VX_HighJumpOrigValue
+        if type(tracked) ~= "table" then tracked = {}; g.VX_HighJumpOrigValue = tracked end
+        local seen = {}
+        local function scan(tbl, depth)
+            if type(tbl) ~= "table" or seen[tbl] or depth > 2 then return end
+            seen[tbl] = true
+            for key, val in pairs(tbl) do
+                if type(val) == "number" and vxIsHighJumpField(key) then
+                    local rec = nil
+                    for _, r in ipairs(tracked) do
+                        if r.tbl == tbl and r.key == key then rec = r; break end
+                    end
+                    if not rec then
+                        rec = {tbl = tbl, key = key, orig = val}
+                        table.insert(tracked, rec)
+                    end
+                    pcall(function() tbl[key] = rec.orig * mult end)
+                elseif type(val) == "table" then
+                    scan(val, depth + 1)
+                end
+            end
+        end
+        local containers = vxHighJumpContainers(actor)
+        for _, container in ipairs(containers) do scan(container, 1) end
+        if #tracked == 0 and not g._VX_HighJumpWarned then
+            g._VX_HighJumpWarned = true
+            local numericKeys = {}
+            for _, container in ipairs(containers) do
+                for key, val in pairs(container) do
+                    if type(key) == "string" and type(val) == "number" and #numericKeys < 15 then
+                        table.insert(numericKeys, key)
+                    end
+                end
+            end
+            warn("[SorsHub] High Sk8 Trick: tidak ada field jump di config Sk8 Veeronica versi ini. Field numerik yang terlihat: " .. table.concat(numericKeys, ", "))
+        end
+    end
+    if not g.VX_HighJumpConn then
+        local last = 0
+        g.VX_HighJumpConn = game:GetService("RunService").Heartbeat:Connect(function()
+            if not getgenv().VX_HighJumpEnabled then
+                revertHighJump()
+                return
+            end
+            local now = os.clock()
+            if now - last >= 0.5 then
+                last = now
+                applyHighJump()
+            end
+        end)
+    end
+end
+
+revertHighJump = function()
+    local g = getgenv()
+    if g.VX_HighJumpConn then
+        pcall(function() g.VX_HighJumpConn:Disconnect() end)
+        g.VX_HighJumpConn = nil
+    end
+    local tracked = g.VX_HighJumpOrigValue
+    if type(tracked) == "table" then
+        for _, r in ipairs(tracked) do
+            pcall(function() r.tbl[r.key] = r.orig end)
+        end
+    end
+    g.VX_HighJumpOrigValue = nil
+    g._VX_HighJumpWarned = nil
+end
+
+-- Bersihkan sisa state eksekusi sebelumnya (getgenv bertahan antar re-execute):
+-- putuskan koneksi lama dan pulihkan nilai asli supaya multiplier tidak menumpuk.
+pcall(function()
+    local g = getgenv()
+    if g.VX_HighJumpConn then
+        pcall(function() g.VX_HighJumpConn:Disconnect() end)
+        g.VX_HighJumpConn = nil
+    end
+    if type(g.VX_HighJumpOrigValue) == "table" then
+        for _, r in ipairs(g.VX_HighJumpOrigValue) do
+            pcall(function() r.tbl[r.key] = r.orig end)
+        end
+    end
+    g.VX_HighJumpOrigValue = nil
+end)
+
 Settings4:AddCheckbox(fn(), {
         Text = "High Sk8 Trick",
         Default = false,

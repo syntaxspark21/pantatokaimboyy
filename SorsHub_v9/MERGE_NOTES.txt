@@ -24,3 +24,18 @@ padahal groupbox "Other Stuff" di pack itu bernama v22 (nama ui hanya ada di
 script gabungan sebelum dipecah). Export kini memakai v22, sehingga pack_10
 menerima groupbox yang benar untuk See Hidden Stats / Protections / Custom
 Spectate Username. Audit semua export/import antar-pack: tidak ada kasus lain.
+
+V20.2 FIX (2026-11-26): pack_04 memanggil applyHighJump()/revertHighJump()
+(toggle "High Sk8 Trick" + slider "How High") yang tidak didefinisikan di mana
+pun — implementasinya hilang saat script gabungan dipecah jadi pack, sehingga
+toggle error "attempt to call a nil value". Fungsi direkonstruksi mengikuti
+pola kode yang ada: actor Veeronica dicari via Actors.CurrentActors (pola "Sk8
+Everywhere"), field numerik terkait jump/ollie/trick di Config.Sk8 /
+Config.Sk8Trick / Behavior.Abilities.Sk8 (kedalaman 2) dikalikan VX_HighJumpMult.
+Nilai asli disimpan per (tabel, field) di getgenv().VX_HighJumpOrigValue dan
+dipulihkan saat toggle off; Heartbeat 0.5s menerapkan ulang selama aktif
+(actor baru tiap ronde). Ada pembersihan state saat pack dimuat agar re-execute
+tidak menumpuk multiplier, dan warn sekali berisi daftar field numerik bila
+tidak ada field jump yang cocok (untuk diagnosis versi game). Nama field asli
+tidak diketahui karena sumber asli hilang; bila warn muncul, kirim daftar
+field-nya agar penargetan bisa disesuaikan. Belum diuji runtime di Roblox.
