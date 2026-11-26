@@ -83,3 +83,23 @@ section native yang terbuka sehingga terlihat berisi.
   tampak kosong, baris ini memastikan apakah kontrol benar-benar dibuat.
 - Counter kontrol dipasang di 6 metode Add* (Checkbox/Slider/Dropdown/
   Input/Button/KeyPicker). Simulasi ulang lulus: opened=true, counter benar.
+
+V20.6 FIX (2026-11-26): akar masalah halaman Azure/Noli/Nosferatu kosong.
+- Diagnosis: section pack dibuat KOSONG lalu diisi setelah yield antar-pack.
+  Pada WindUI (terutama versi cache lama), Section:Open() digate oleh
+  Expandable (baru true setelah ada anak), dan frame section dipatok
+  setinggi header dengan ClipsDescendants=true. Kontrol yang ditambahkan
+  belakangan ter-clip -> halaman tampak kosong walau terhitung di console.
+  Section native main tidak kena karena anaknya diisi sinkron. Inilah sebab
+  fix Opened=true (V20.5) tidak mempan: Open() dipanggil saat Expandable
+  masih false.
+- Fix: setelah "feature pack merged", task.spawn membuka ulang semua
+  section pack yang terisi (s.Opened=true; s:Open(true)) 8x tiap 0.25s
+  agar kontrol dari task.spawn yang telat ikut tertangkap. Aman di WindUI
+  baru (no-op bila sudah terbuka).
+- Tambahan: method elemen section (Toggle/Slider/dll) dibungkus logging —
+  kegagalan render yang dulu ditelan pcall kini tampil sebagai
+  "[SorsHub] gagal render <method> '<judul>': <error>".
+- Penanda build "[SorsHub] main build: V20.6-repo" ditambahkan di awal main.
+- Diuji interpreter Lua + stub WindUI lama: reproduksi bug 0/14 kontrol
+  terlihat -> sesudah fix 14/14 terlihat; warn render tertangkap benar.

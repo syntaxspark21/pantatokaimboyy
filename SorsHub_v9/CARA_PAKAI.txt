@@ -26,3 +26,17 @@ CARA PAKAI CEPAT (LOADER READFILE) - V20.3
 Loader otomatis mencari main, menyalin main + 10 pack ke folder SorsHub/
 (menimpa versi lama, jadi tidak perlu copy manual), lalu menjalankan main.
 Error compile main akan menyebut "SorsHub_main.lua:baris", bukan string acak.
+
+PENTING - SINKRON PENUH (V20.6)
+Kalau halaman karakter (Azure/Noli/Nosferatu/dll) tampak kosong padahal
+console menunjukkan jumlah elemen > 0: itu bug clipping section WindUI
+lama (kontrol ter-clip karena section dibuka sebelum punya anak).
+V20.6 membuka ulang semua section pack setelah load — ganti SELURUH isi
+folder SorsHub_v9 (main + parts + loader) dengan versi repo, lalu jalankan
+loader. Jangan hanya mengganti pack.
+Verifikasi: console harus menampilkan
+  [SorsHub] main build: V20.6-repo (2026-11-26)
+Kalau baris itu tidak muncul, main yang jalan bukan versi repo.
+Kalau ada kontrol gagal render, console kini menampilkan
+  [SorsHub] gagal render <jenis> '<judul>': <error>
+— screenshot baris itu untuk diagnosis lanjutan.

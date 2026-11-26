@@ -1,4 +1,7 @@
 print("SorsHub 1.2 loading...")
+-- [SorsHub] Penanda build: kalau baris ini TIDAK muncul di console, berarti
+-- main yang dijalankan BUKAN versi repo ini (mis. main lama di device).
+print("[SorsHub] main build: V20.6-repo (2026-11-26)")
 
 -- ============================================================
 -- BOOT STATUS (visible even when the executor console is hidden)
@@ -359,6 +362,27 @@ pcall(function()
                             return originalToggle(sectionSelf, toggleCfg, ...)
                         end
                         section.__sorshubBoolTogglePatched = true
+                    end
+                end)
+                -- [SorsHub fix V20.6] Kegagalan render kontrol sebelumnya ditelan
+                -- pcall tanpa jejak. Bungkus method elemen supaya error tampil di
+                -- console dengan judul kontrolnya (hasil asli tetap dikembalikan).
+                pcall(function()
+                    if section and not section.__sorshubRenderLogged then
+                        section.__sorshubRenderLogged = true
+                        for _, m in ipairs({"Toggle", "Slider", "Dropdown", "Input", "Keybind", "Colorpicker", "Button"}) do
+                            local orig = section[m]
+                            if type(orig) == "function" then
+                                section[m] = function(self2, cfg2, ...)
+                                    local packed = table.pack(pcall(orig, self2, cfg2, ...))
+                                    if not packed[1] then
+                                        warn("[SorsHub] gagal render " .. m .. " '" .. tostring(type(cfg2) == "table" and cfg2.Title) .. "': " .. tostring(packed[2]))
+                                        return nil
+                                    end
+                                    return table.unpack(packed, 2, packed.n)
+                                end
+                            end
+                        end
                     end
                 end)
                 return section
@@ -10182,6 +10206,28 @@ task.spawn(function()
             end
             if #parts > 0 then
                 print("[SorsHub] UI pack sections: " .. table.concat(parts, ", "))
+            end
+        end)
+        -- [SorsHub fix V20.6] Akar masalah tab karakter (Azure/Noli/Nosferatu)
+        -- tampak kosong: Section WindUI hanya bisa dibuka (Open) setelah punya
+        -- anak (Expandable). Section pack dibuat kosong lalu diisi setelah
+        -- yield antar-pack; pada sebagian versi WindUI frame section tetap
+        -- setinggi header dengan ClipsDescendants=true, sehingga kontrol yang
+        -- ditambahkan belakangan ter-clip dan tidak terlihat. Buka eksplisit
+        -- semua section pack yang sudah terisi, berulang sebentar agar kontrol
+        -- dari task.spawn yang telat ikut tertangkap.
+        task.spawn(function()
+            for _ = 1, 8 do
+                task.wait(0.25)
+                for _, rec in ipairs(MergeRoot.__uiSections or {}) do
+                    local s = rec.section
+                    if s and (s.__vxCount or 0) > 0 then
+                        pcall(function()
+                            s.Opened = true
+                            if type(s.Open) == "function" then s:Open(true) end
+                        end)
+                    end
+                end
             end
         end)
     else
