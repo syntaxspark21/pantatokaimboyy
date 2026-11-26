@@ -39,3 +39,11 @@ tidak menumpuk multiplier, dan warn sekali berisi daftar field numerik bila
 tidak ada field jump yang cocok (untuk diagnosis versi game). Nama field asli
 tidak diketahui karena sumber asli hilang; bila warn muncul, kirim daftar
 field-nya agar penargetan bisa disesuaikan. Belum diuji runtime di Roblox.
+
+V20.3 (2026-11-26): tambah SorsHub_loader.lua — loader readfile untuk executor
+mobile. Mencari SorsHub_main.lua (SorsHub_v9/ > SorsHub/ > root), memvalidasi
+10 pack, menyinkronkan main + parts ke SorsHub/ via writefile (versi zip baru
+menang atas cache lama), lalu menjalankan main dengan chunkname terbaca.
+Diuji dengan interpreter Lua + stub filesystem executor: 6 skenario lulus
+(zip baru, sudah terpasang, pack hilang, tanpa writefile, cache lama vs zip
+baru, main di root). CARA_PAKAI.txt diperbarui.

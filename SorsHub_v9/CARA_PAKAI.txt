@@ -15,3 +15,14 @@ PERBAIKAN V19
 Catatan: perbaikan ini menutup jalur config yang tidak memeriksa tipe nilai.
 Jika error tetap muncul, traceback baru akan menunjukkan file/baris sumber.
 Pengujian langsung di Roblox belum dilakukan.
+
+CARA PAKAI CEPAT (LOADER READFILE) - V20.3
+1. Ekstrak zip ini ke workspace executor (jadi folder SorsHub_v9).
+2. Simpan SorsHub_loader.lua di workspace (boleh di root atau di SorsHub_v9).
+3. Jalankan di executor:
+     loadstring(readfile("SorsHub_loader.lua"))()
+   atau kalau loader ada di dalam folder zip:
+     loadstring(readfile("SorsHub_v9/SorsHub_loader.lua"))()
+Loader otomatis mencari main, menyalin main + 10 pack ke folder SorsHub/
+(menimpa versi lama, jadi tidak perlu copy manual), lalu menjalankan main.
+Error compile main akan menyebut "SorsHub_main.lua:baris", bukan string acak.
