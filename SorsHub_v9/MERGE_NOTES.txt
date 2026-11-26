@@ -103,3 +103,21 @@ V20.6 FIX (2026-11-26): akar masalah halaman Azure/Noli/Nosferatu kosong.
 - Penanda build "[SorsHub] main build: V20.6-repo" ditambahkan di awal main.
 - Diuji interpreter Lua + stub WindUI lama: reproduksi bug 0/14 kontrol
   terlihat -> sesudah fix 14/14 terlihat; warn render tertangkap benar.
+
+V20.7 (2026-11-26): hapus section kosong + audit semua section.
+- "Anti Bait Preview" (pack_06) satu-satunya section yang benar-benar kosong:
+  AddViewport adalah no-op (WindUI tidak punya elemen viewport 3D). Seluruh
+  blok preview (clone Slasher, WorldModel, pencarian ViewportFrame 6 detik)
+  dihapus dari pack_06 karena hanya melayani preview yang tidak pernah tampil.
+- AddLabel (Paragraph) dan AddButton kini ikut dihitung __vxCount — sebelumnya
+  section berisi label/button saja bisa salah terbaca 0.
+- Pembersihan otomatis: setelah jendela open-pass 2 detik, section pack yang
+  tetap 0 kontrol di-Destroy dan dicatat: "[SorsHub] section kosong dihapus: ...".
+- Audit statis semua section vs console user: semuanya cocok. Selisih kecil
+  terjelaskan: label/button belum terhitung di diagnostik lama (Aimbot 8 vs 7,
+  Interface 6 vs 5); Stamina System=9 dari 1 checkbox + 4x fn5(checkbox+input);
+  Anti=4 dari kontrol dinamis loop (6 checkbox duplikat native disupresi);
+  Stuff=1 memang by design (3 duplikat native disupresi); Walkspeed sengaja
+  tidak dirender (sudah ada di Extras native).
+- Diuji interpreter Lua + stub: section toggle/label/button terlihat & tidak
+  terhapus; section kosong ter-Destroy; open-pass V20.6 tetap lulus.

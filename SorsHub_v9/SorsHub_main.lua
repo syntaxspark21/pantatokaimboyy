@@ -9831,6 +9831,7 @@ function MergeProto:AddButton(flag, cfg)
     local section = self:__getSection()
     local proxy = vxElement(section, flag, nil, self)
     if section then
+        section.__vxCount = (section.__vxCount or 0) + 1 -- [SorsHub fix V20.7] button ikut dihitung
         pcall(function()
             section:Button({
                 Title = tostring(cfg.Text or "Button"),
@@ -9919,6 +9920,9 @@ end -- [SorsHub: scope local]
 function MergeProto:AddLabel(text, cfg)
     local section = self:__getSection()
     if section then
+        -- [SorsHub fix V20.7] Label (Paragraph) ikut dihitung agar section yang
+        -- hanya berisi label tidak salah dianggap kosong lalu dibersihkan.
+        section.__vxCount = (section.__vxCount or 0) + 1
         local desc = nil
         if type(cfg) == "table" then desc = cfg.Desc or cfg.Description end
         pcall(function()
@@ -10228,6 +10232,24 @@ task.spawn(function()
                         end)
                     end
                 end
+            end
+            -- [SorsHub fix V20.7] Setelah jendela 2 detik selesai, hapus section
+            -- pack yang TETAP kosong (0 kontrol): mis. section yang hanya berisi
+            -- Viewport (tidak didukung WindUI) atau semua kontrolnya duplikat
+            -- native. Section berisi label/button kini ikut terhitung, jadi
+            -- tidak akan salah terhapus.
+            local removed = {}
+            for _, rec in ipairs(MergeRoot.__uiSections or {}) do
+                local s = rec.section
+                if s and (s.__vxCount or 0) == 0 then
+                    pcall(function()
+                        if type(s.Destroy) == "function" then s:Destroy() end
+                    end)
+                    table.insert(removed, tostring(rec.tab))
+                end
+            end
+            if #removed > 0 then
+                print("[SorsHub] section kosong dihapus: " .. table.concat(removed, ", "))
             end
         end)
     else
