@@ -1,0 +1,26 @@
+SorsHub V19 - Config Bool Guard + Error Trace
+
+Basis: SorsHub_V18_BoolType_Hardening.zip.
+
+Perbaikan: parser config Toggle memvalidasi data.value sebelum Toggle:Set;
+file config lama diperiksa dan nilai Toggle non-boolean dinormalisasi; semua
+Toggle WindUI menerima Value boolean (Default tetap diselaraskan untuk
+kompatibilitas). Error utama dan error tiap feature pack kini memakai
+traceback agar lokasi kegagalan dapat ditelusuri.
+
+Seluruh 10 file pack dipertahankan. ZIP diuji integritas. Pengujian runtime
+Roblox/executor tetap belum dapat dilakukan di lingkungan ini.
+
+
+V20 FIX (2026-11-26): Corrected findPath vararg handling. The prior call passed
+select(i, ...) directly as the final argument to FindFirstChild, which expanded
+remaining path segments into optional parameters. A later string was therefore
+received as FindFirstChild's recursive boolean argument, causing "Unable to cast
+string to bool". The function now stores one segment before calling FindFirstChild.
+
+V20.1 FIX (2026-11-26): pack_10 error baris 142 "attempt to index nil with
+'AddCheckbox'". Penyebab: pack_09 baris 2955 meng-export P["ui@27851,..."] = ui,
+padahal groupbox "Other Stuff" di pack itu bernama v22 (nama ui hanya ada di
+script gabungan sebelum dipecah). Export kini memakai v22, sehingga pack_10
+menerima groupbox yang benar untuk See Hidden Stats / Protections / Custom
+Spectate Username. Audit semua export/import antar-pack: tidak ada kasus lain.

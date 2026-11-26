@@ -1,0 +1,17 @@
+SorsHub V19 - Config Bool Guard
+
+PASANG
+Replace folder SorsHub dengan isi ZIP ini, termasuk seluruh file parts.
+Jalankan SorsHub_main.lua seperti biasa.
+
+PERBAIKAN V19
+- Nilai Toggle dari file config divalidasi sebagai boolean sebelum Toggle:Set.
+- Config lama dengan nilai string/angka dinormalisasi saat dimuat.
+- Opsi Toggle WindUI menggunakan field Value (boolean); Default diselaraskan
+  agar kompatibel dengan config dan kode SorsHub versi sebelumnya.
+- Error yang tidak tertangani akan menampilkan traceback lebih lengkap, dan
+  kegagalan part menyebut nama pack dan stack trace.
+
+Catatan: perbaikan ini menutup jalur config yang tidak memeriksa tipe nilai.
+Jika error tetap muncul, traceback baru akan menunjukkan file/baris sumber.
+Pengujian langsung di Roblox belum dilakukan.
