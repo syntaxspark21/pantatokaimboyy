@@ -66,3 +66,20 @@ V20.4 FIX (2026-11-26): audit path terhadap dump instance tree game asli
   Map.Ingame.Map.MapBoundaries.KillerDoors, MainUI.SprintingButton runtime.
 - Warning SmartBone2::LoadObject di console adalah warning rig karakter milik
   game, bukan dari SorsHub (tidak ada referensi SmartBone di kode).
+
+V20.5 FIX (2026-11-26): tab Azure/Noli/Nosferatu tampak kosong. Investigasi:
+routing groupbox karakter ke tab masing-masing sudah benar (disimulasikan
+dengan interpreter Lua + stub WindUI: kontrol mendarat di tab yang tepat),
+pack loaded sukses, dan WindUI (1.6.61 s/d terbaru) membuat container tab
+secara eager. Penyebab paling mungkin: SEMUA section pack dibuat dengan
+Opened=false (collapsed) — tab killer hanya berisi satu header tipis tanpa
+kontrol terlihat, sehingga tampak "kosong" di mobile; tab survivor punya
+section native yang terbuka sehingga terlihat berisi.
+- Perbaikan: section pack (AddLeftGroupbox/AddTab/fallback General) kini
+  Opened=true agar fitur langsung terlihat.
+- Diagnostik baru: setelah "feature pack merged", console mencetak
+  "[SorsHub] UI pack sections: Azure=4, Noli=5, ..." (jumlah kontrol per
+  section; "(section GAGAL)" bila pembuatan section gagal). Bila tab masih
+  tampak kosong, baris ini memastikan apakah kontrol benar-benar dibuat.
+- Counter kontrol dipasang di 6 metode Add* (Checkbox/Slider/Dropdown/
+  Input/Button/KeyPicker). Simulasi ulang lulus: opened=true, counter benar.

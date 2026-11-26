@@ -9531,7 +9531,7 @@ function MergeProto:__getSection()
     end
     if self.__tab then
         local created
-        pcall(function() created = self.__tab:Section({ Title = "General", Opened = false, Box = true }) end)
+        pcall(function() created = self.__tab:Section({ Title = "General", Opened = true, Box = true }) end)
         self.__section = created
         return created
     end
@@ -9543,7 +9543,12 @@ function MergeProto:AddLeftGroupbox(name, icon)
     local tab = self.__tab or (self.__parent and self.__parent.__tab)
     if self.__charMode then tab = MergeRoot.__charTab(name) end
     if tab then
-        pcall(function() section = tab:Section({ Title = tostring(name or "Group"), Opened = false, Box = true }) end)
+        -- [SorsHub fix V20.5] Opened=true: section pack dulu selalu collapsed,
+        -- membuat tab karakter (Azure/Noli/Nosferatu) tampak "kosong" di mobile
+        -- karena hanya menampilkan header tipis tanpa kontrol terlihat.
+        pcall(function() section = tab:Section({ Title = tostring(name or "Group"), Opened = true, Box = true }) end)
+        MergeRoot.__uiSections = MergeRoot.__uiSections or {}
+        table.insert(MergeRoot.__uiSections, { tab = tostring(name or "Group"), section = section })
     end
     return vxElement(section or self:__getSection(), nil, nil, self)
 end
@@ -9586,7 +9591,10 @@ function MergeProto:AddTab(name, icon)
         end
     end
     if tab then
-        pcall(function() section = tab:Section({ Title = title, Opened = false, Box = true }) end)
+        -- [SorsHub fix V20.5] Opened=true agar fitur langsung terlihat (lihat AddLeftGroupbox).
+        pcall(function() section = tab:Section({ Title = title, Opened = true, Box = true }) end)
+        MergeRoot.__uiSections = MergeRoot.__uiSections or {}
+        table.insert(MergeRoot.__uiSections, { tab = title, section = section })
     end
     return vxElement(section or self:__getSection(), nil, nil, self)
 end
@@ -9643,6 +9651,7 @@ function MergeProto:AddCheckbox(flag, cfg)
     local proxy = vxElement(section, flag, default, self)
     if type(flag) == "string" then Options[flag] = { Value = default } end
     if section then
+        section.__vxCount = (section.__vxCount or 0) + 1
         local windFlag = vxFlagName(flag)
         pcall(function()
             section:Toggle({
@@ -9683,6 +9692,7 @@ function MergeProto:AddSlider(flag, cfg)
     local proxy = vxElement(section, flag, default, self)
     if type(flag) == "string" then Options[flag] = { Value = default } end
     if section then
+        section.__vxCount = (section.__vxCount or 0) + 1
         local windFlag = vxFlagName(flag)
         pcall(function()
             section:Slider({
@@ -9724,6 +9734,7 @@ function MergeProto:AddDropdown(flag, cfg)
     local proxy = vxElement(section, flag, default, self)
     if type(flag) == "string" then Options[flag] = { Value = default } end
     if section then
+        section.__vxCount = (section.__vxCount or 0) + 1
         local windFlag = vxFlagName(flag)
         pcall(function()
             section:Dropdown({
@@ -9762,6 +9773,7 @@ function MergeProto:AddInput(flag, cfg)
     local proxy = vxElement(section, flag, default, self)
     if type(flag) == "string" then Options[flag] = { Value = default } end
     if section then
+        section.__vxCount = (section.__vxCount or 0) + 1
         local windFlag = vxFlagName(flag)
         pcall(function()
             section:Input({
@@ -9822,6 +9834,7 @@ function MergeProto:AddKeyPicker(flag, cfg)
     local proxy = vxElement(section, flag, default, self)
     if type(flag) == "string" then Options[flag] = { Value = default } end
     if section then
+        section.__vxCount = (section.__vxCount or 0) + 1
         local windFlag = vxFlagName(flag)
         pcall(function()
             section:Keybind({
@@ -9857,6 +9870,7 @@ function MergeProto:AddColorPicker(flag, cfg)
     local proxy = vxElement(section, flag, default, self)
     if type(flag) == "string" then Options[flag] = { Value = default } end
     if section then
+        section.__vxCount = (section.__vxCount or 0) + 1
         local windFlag = vxFlagName(flag)
         pcall(function()
             section:Colorpicker({
@@ -10158,6 +10172,18 @@ task.spawn(function()
     local ok, err = pcall(loadMergedFeaturePack)
     if ok then
         print("[SorsHub] feature pack merged")
+        -- [SorsHub fix V20.5] Diagnostik: laporkan jumlah kontrol per section pack
+        -- supaya tab yang tampak kosong bisa dipastikan penyebabnya dari console.
+        pcall(function()
+            local parts = {}
+            for _, rec in ipairs(MergeRoot.__uiSections or {}) do
+                local n = rec.section and rec.section.__vxCount or 0
+                parts[#parts + 1] = rec.tab .. "=" .. n .. (rec.section and "" or " (section GAGAL)")
+            end
+            if #parts > 0 then
+                print("[SorsHub] UI pack sections: " .. table.concat(parts, ", "))
+            end
+        end)
     else
         warn("[SorsHub] merge error: " .. tostring(err))
         pcall(function()
