@@ -35,7 +35,7 @@ V20.6 membuka ulang semua section pack setelah load — ganti SELURUH isi
 folder SorsHub_v9 (main + parts + loader) dengan versi repo, lalu jalankan
 loader. Jangan hanya mengganti pack.
 Verifikasi: console harus menampilkan
-  [SorsHub] main build: V20.6-repo (2026-11-26)
+  [SorsHub] main build: V20.7-repo (2026-11-26)
 Kalau baris itu tidak muncul, main yang jalan bukan versi repo.
 Kalau ada kontrol gagal render, console kini menampilkan
   [SorsHub] gagal render <jenis> '<judul>': <error>

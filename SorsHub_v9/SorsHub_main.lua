@@ -1,7 +1,7 @@
 print("SorsHub 1.2 loading...")
 -- [SorsHub] Penanda build: kalau baris ini TIDAK muncul di console, berarti
 -- main yang dijalankan BUKAN versi repo ini (mis. main lama di device).
-print("[SorsHub] main build: V20.6-repo (2026-11-26)")
+print("[SorsHub] main build: V20.7-repo (2026-11-26)")
 
 -- ============================================================
 -- BOOT STATUS (visible even when the executor console is hidden)
