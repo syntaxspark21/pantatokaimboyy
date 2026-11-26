@@ -65,19 +65,44 @@ end
 
 local function vxHighJumpContainers(actor)
     local list = {}
-    local config = actor.Config
+    local config = actor and actor.Config
     if type(config) == "table" then
         for _, name in ipairs({"Sk8", "Sk8Trick", "Trick"}) do
             if type(config[name]) == "table" then table.insert(list, config[name]) end
         end
     end
-    local behavior = actor.Behavior
+    local behavior = actor and actor.Behavior
     local abilities = type(behavior) == "table" and behavior.Abilities
     if type(abilities) == "table" then
         for _, name in ipairs({"Sk8", "Sk8Trick", "Trick"}) do
             if type(abilities[name]) == "table" then table.insert(list, abilities[name]) end
         end
     end
+    -- [SorsHub fix V20.4] Dari dump path game: Assets.Survivors.Veeronica punya
+    -- ModuleScript Config dan Behavior. Scan module bersamanya juga supaya
+    -- fitur tetap bekerja walau actor belum aktif (mis. masih di lobby).
+    pcall(function()
+        local rs = game:GetService("ReplicatedStorage")
+        local assets = rs:FindFirstChild("Assets")
+        local survivors = assets and assets:FindFirstChild("Survivors")
+        local folder = survivors and survivors:FindFirstChild("Veeronica")
+        if not folder then return end
+        local configModule = folder:FindFirstChild("Config")
+        if configModule then
+            local cfg = require(configModule)
+            if type(cfg) == "table" then table.insert(list, cfg) end
+        end
+        local behaviorModule = folder:FindFirstChild("Behavior")
+        if behaviorModule then
+            local beh = require(behaviorModule)
+            local ab = type(beh) == "table" and beh.Abilities
+            if type(ab) == "table" then
+                for _, name in ipairs({"Sk8", "Sk8Trick", "Trick"}) do
+                    if type(ab[name]) == "table" then table.insert(list, ab[name]) end
+                end
+            end
+        end
+    end)
     return list
 end
 
@@ -87,43 +112,41 @@ local function applyHighJump()
     if not g.VX_HighJumpEnabled then return end
     local mult = tonumber(g.VX_HighJumpMult) or 2
     local actor = vxGetVeeronicaActor()
-    if actor then
-        local tracked = g.VX_HighJumpOrigValue
-        if type(tracked) ~= "table" then tracked = {}; g.VX_HighJumpOrigValue = tracked end
-        local seen = {}
-        local function scan(tbl, depth)
-            if type(tbl) ~= "table" or seen[tbl] or depth > 2 then return end
-            seen[tbl] = true
-            for key, val in pairs(tbl) do
-                if type(val) == "number" and vxIsHighJumpField(key) then
-                    local rec = nil
-                    for _, r in ipairs(tracked) do
-                        if r.tbl == tbl and r.key == key then rec = r; break end
-                    end
-                    if not rec then
-                        rec = {tbl = tbl, key = key, orig = val}
-                        table.insert(tracked, rec)
-                    end
-                    pcall(function() tbl[key] = rec.orig * mult end)
-                elseif type(val) == "table" then
-                    scan(val, depth + 1)
+    local tracked = g.VX_HighJumpOrigValue
+    if type(tracked) ~= "table" then tracked = {}; g.VX_HighJumpOrigValue = tracked end
+    local seen = {}
+    local function scan(tbl, depth)
+        if type(tbl) ~= "table" or seen[tbl] or depth > 3 then return end
+        seen[tbl] = true
+        for key, val in pairs(tbl) do
+            if type(val) == "number" and vxIsHighJumpField(key) then
+                local rec = nil
+                for _, r in ipairs(tracked) do
+                    if r.tbl == tbl and r.key == key then rec = r; break end
+                end
+                if not rec then
+                    rec = {tbl = tbl, key = key, orig = val}
+                    table.insert(tracked, rec)
+                end
+                pcall(function() tbl[key] = rec.orig * mult end)
+            elseif type(val) == "table" then
+                scan(val, depth + 1)
+            end
+        end
+    end
+    local containers = vxHighJumpContainers(actor)
+    for _, container in ipairs(containers) do scan(container, 1) end
+    if #tracked == 0 and not g._VX_HighJumpWarned then
+        g._VX_HighJumpWarned = true
+        local numericKeys = {}
+        for _, container in ipairs(containers) do
+            for key, val in pairs(container) do
+                if type(key) == "string" and type(val) == "number" and #numericKeys < 15 then
+                    table.insert(numericKeys, key)
                 end
             end
         end
-        local containers = vxHighJumpContainers(actor)
-        for _, container in ipairs(containers) do scan(container, 1) end
-        if #tracked == 0 and not g._VX_HighJumpWarned then
-            g._VX_HighJumpWarned = true
-            local numericKeys = {}
-            for _, container in ipairs(containers) do
-                for key, val in pairs(container) do
-                    if type(key) == "string" and type(val) == "number" and #numericKeys < 15 then
-                        table.insert(numericKeys, key)
-                    end
-                end
-            end
-            warn("[SorsHub] High Sk8 Trick: tidak ada field jump di config Sk8 Veeronica versi ini. Field numerik yang terlihat: " .. table.concat(numericKeys, ", "))
-        end
+        warn("[SorsHub] High Sk8 Trick: tidak ada field jump di config Sk8 Veeronica versi ini. Field numerik yang terlihat: " .. table.concat(numericKeys, ", "))
     end
     if not g.VX_HighJumpConn then
         local last = 0
@@ -1230,7 +1253,10 @@ task.spawn(function()
                 if str == name .. "StopSk8" and typeof(tbl9[2]) == "table" then
                     for i, v17 in ipairs(tbl9[2]) do
                         if typeof(v17) == "Instance" then
-                            ReplicatedStorage4:WaitForChild("Modules"):WaitForChild("Network"):WaitForChild("RemoteEvent"):FireServer(name .. "StopSk8", {buffer.fromstring("\"Manual\"")})
+                            -- [SorsHub fix V20.4] RemoteEvent ada di Modules.Network.Network.RemoteEvent
+                            -- (terkonfirmasi dari dump path game); path lama kurang satu level
+                            -- "Network" sehingga WaitForChild("RemoteEvent") menggantung selamanya.
+                            ReplicatedStorage4:WaitForChild("Modules"):WaitForChild("Network"):WaitForChild("Network"):WaitForChild("RemoteEvent"):FireServer(name .. "StopSk8", {buffer.fromstring("\"Manual\"")})
                             return nil
                         end
                     end

@@ -47,3 +47,22 @@ menang atas cache lama), lalu menjalankan main dengan chunkname terbaca.
 Diuji dengan interpreter Lua + stub filesystem executor: 6 skenario lulus
 (zip baru, sudah terpasang, pack hilang, tanpa writefile, cache lama vs zip
 baru, main di root). CARA_PAKAI.txt diperbarui.
+
+V20.4 FIX (2026-11-26): audit path terhadap dump instance tree game asli
+(Roblox_FullPaths.txt, 88 ribu baris, kondisi lobby).
+- TERKONFIRMASI BENAR: Modules.Network.Network.RemoteEvent,
+  Modules.Gameplay.Actors, Modules.Utilities.Util,
+  Assets.Survivors.Veeronica.Behavior/Config, Assets.Survivors.JaneDoe.Behavior,
+  Assets.Emotes, Workspace.Players.Killers/Survivors, generator
+  Instances.Generator.Progress.BarUI.Bar, TemporaryUI.PlayerInfo.Bars.Stamina.Amount.
+- BUG DIPERBAIKI: pack_04 Anti Rebound memakai Modules.Network.RemoteEvent
+  (kurang satu level Network) -> WaitForChild menggantung selamanya saat
+  intercept StopSk8. Kini Modules.Network.Network.RemoteEvent.
+- High Sk8 Trick ditingkatkan: scan juga module bersama
+  Assets.Survivors.Veeronica.Config dan .Behavior.Abilities.Sk8 (dari dump),
+  kedalaman scan 3, bekerja tanpa actor aktif (lobby). Diuji interpreter Lua
+  dengan stub game: enable/slider/disable/actor semua lulus.
+- Tidak terverifikasi dari dump lobby (hanya ada saat ronde):
+  Map.Ingame.Map.MapBoundaries.KillerDoors, MainUI.SprintingButton runtime.
+- Warning SmartBone2::LoadObject di console adalah warning rig karakter milik
+  game, bukan dari SorsHub (tidak ada referensi SmartBone di kode).
