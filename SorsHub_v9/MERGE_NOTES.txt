@@ -1,0 +1,85 @@
+SorsHub V19 - Config Bool Guard + Error Trace
+
+Basis: SorsHub_V18_BoolType_Hardening.zip.
+
+Perbaikan: parser config Toggle memvalidasi data.value sebelum Toggle:Set;
+file config lama diperiksa dan nilai Toggle non-boolean dinormalisasi; semua
+Toggle WindUI menerima Value boolean (Default tetap diselaraskan untuk
+kompatibilitas). Error utama dan error tiap feature pack kini memakai
+traceback agar lokasi kegagalan dapat ditelusuri.
+
+Seluruh 10 file pack dipertahankan. ZIP diuji integritas. Pengujian runtime
+Roblox/executor tetap belum dapat dilakukan di lingkungan ini.
+
+
+V20 FIX (2026-11-26): Corrected findPath vararg handling. The prior call passed
+select(i, ...) directly as the final argument to FindFirstChild, which expanded
+remaining path segments into optional parameters. A later string was therefore
+received as FindFirstChild's recursive boolean argument, causing "Unable to cast
+string to bool". The function now stores one segment before calling FindFirstChild.
+
+V20.1 FIX (2026-11-26): pack_10 error baris 142 "attempt to index nil with
+'AddCheckbox'". Penyebab: pack_09 baris 2955 meng-export P["ui@27851,..."] = ui,
+padahal groupbox "Other Stuff" di pack itu bernama v22 (nama ui hanya ada di
+script gabungan sebelum dipecah). Export kini memakai v22, sehingga pack_10
+menerima groupbox yang benar untuk See Hidden Stats / Protections / Custom
+Spectate Username. Audit semua export/import antar-pack: tidak ada kasus lain.
+
+V20.2 FIX (2026-11-26): pack_04 memanggil applyHighJump()/revertHighJump()
+(toggle "High Sk8 Trick" + slider "How High") yang tidak didefinisikan di mana
+pun — implementasinya hilang saat script gabungan dipecah jadi pack, sehingga
+toggle error "attempt to call a nil value". Fungsi direkonstruksi mengikuti
+pola kode yang ada: actor Veeronica dicari via Actors.CurrentActors (pola "Sk8
+Everywhere"), field numerik terkait jump/ollie/trick di Config.Sk8 /
+Config.Sk8Trick / Behavior.Abilities.Sk8 (kedalaman 2) dikalikan VX_HighJumpMult.
+Nilai asli disimpan per (tabel, field) di getgenv().VX_HighJumpOrigValue dan
+dipulihkan saat toggle off; Heartbeat 0.5s menerapkan ulang selama aktif
+(actor baru tiap ronde). Ada pembersihan state saat pack dimuat agar re-execute
+tidak menumpuk multiplier, dan warn sekali berisi daftar field numerik bila
+tidak ada field jump yang cocok (untuk diagnosis versi game). Nama field asli
+tidak diketahui karena sumber asli hilang; bila warn muncul, kirim daftar
+field-nya agar penargetan bisa disesuaikan. Belum diuji runtime di Roblox.
+
+V20.3 (2026-11-26): tambah SorsHub_loader.lua — loader readfile untuk executor
+mobile. Mencari SorsHub_main.lua (SorsHub_v9/ > SorsHub/ > root), memvalidasi
+10 pack, menyinkronkan main + parts ke SorsHub/ via writefile (versi zip baru
+menang atas cache lama), lalu menjalankan main dengan chunkname terbaca.
+Diuji dengan interpreter Lua + stub filesystem executor: 6 skenario lulus
+(zip baru, sudah terpasang, pack hilang, tanpa writefile, cache lama vs zip
+baru, main di root). CARA_PAKAI.txt diperbarui.
+
+V20.4 FIX (2026-11-26): audit path terhadap dump instance tree game asli
+(Roblox_FullPaths.txt, 88 ribu baris, kondisi lobby).
+- TERKONFIRMASI BENAR: Modules.Network.Network.RemoteEvent,
+  Modules.Gameplay.Actors, Modules.Utilities.Util,
+  Assets.Survivors.Veeronica.Behavior/Config, Assets.Survivors.JaneDoe.Behavior,
+  Assets.Emotes, Workspace.Players.Killers/Survivors, generator
+  Instances.Generator.Progress.BarUI.Bar, TemporaryUI.PlayerInfo.Bars.Stamina.Amount.
+- BUG DIPERBAIKI: pack_04 Anti Rebound memakai Modules.Network.RemoteEvent
+  (kurang satu level Network) -> WaitForChild menggantung selamanya saat
+  intercept StopSk8. Kini Modules.Network.Network.RemoteEvent.
+- High Sk8 Trick ditingkatkan: scan juga module bersama
+  Assets.Survivors.Veeronica.Config dan .Behavior.Abilities.Sk8 (dari dump),
+  kedalaman scan 3, bekerja tanpa actor aktif (lobby). Diuji interpreter Lua
+  dengan stub game: enable/slider/disable/actor semua lulus.
+- Tidak terverifikasi dari dump lobby (hanya ada saat ronde):
+  Map.Ingame.Map.MapBoundaries.KillerDoors, MainUI.SprintingButton runtime.
+- Warning SmartBone2::LoadObject di console adalah warning rig karakter milik
+  game, bukan dari SorsHub (tidak ada referensi SmartBone di kode).
+
+V20.5 FIX (2026-11-26): tab Azure/Noli/Nosferatu tampak kosong. Investigasi:
+routing groupbox karakter ke tab masing-masing sudah benar (disimulasikan
+dengan interpreter Lua + stub WindUI: kontrol mendarat di tab yang tepat),
+pack loaded sukses, dan WindUI (1.6.61 s/d terbaru) membuat container tab
+secara eager. Penyebab paling mungkin: SEMUA section pack dibuat dengan
+Opened=false (collapsed) — tab killer hanya berisi satu header tipis tanpa
+kontrol terlihat, sehingga tampak "kosong" di mobile; tab survivor punya
+section native yang terbuka sehingga terlihat berisi.
+- Perbaikan: section pack (AddLeftGroupbox/AddTab/fallback General) kini
+  Opened=true agar fitur langsung terlihat.
+- Diagnostik baru: setelah "feature pack merged", console mencetak
+  "[SorsHub] UI pack sections: Azure=4, Noli=5, ..." (jumlah kontrol per
+  section; "(section GAGAL)" bila pembuatan section gagal). Bila tab masih
+  tampak kosong, baris ini memastikan apakah kontrol benar-benar dibuat.
+- Counter kontrol dipasang di 6 metode Add* (Checkbox/Slider/Dropdown/
+  Input/Button/KeyPicker). Simulasi ulang lulus: opened=true, counter benar.

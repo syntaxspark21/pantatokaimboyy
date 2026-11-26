@@ -1,0 +1,28 @@
+SorsHub V19 - Config Bool Guard
+
+PASANG
+Replace folder SorsHub dengan isi ZIP ini, termasuk seluruh file parts.
+Jalankan SorsHub_main.lua seperti biasa.
+
+PERBAIKAN V19
+- Nilai Toggle dari file config divalidasi sebagai boolean sebelum Toggle:Set.
+- Config lama dengan nilai string/angka dinormalisasi saat dimuat.
+- Opsi Toggle WindUI menggunakan field Value (boolean); Default diselaraskan
+  agar kompatibel dengan config dan kode SorsHub versi sebelumnya.
+- Error yang tidak tertangani akan menampilkan traceback lebih lengkap, dan
+  kegagalan part menyebut nama pack dan stack trace.
+
+Catatan: perbaikan ini menutup jalur config yang tidak memeriksa tipe nilai.
+Jika error tetap muncul, traceback baru akan menunjukkan file/baris sumber.
+Pengujian langsung di Roblox belum dilakukan.
+
+CARA PAKAI CEPAT (LOADER READFILE) - V20.3
+1. Ekstrak zip ini ke workspace executor (jadi folder SorsHub_v9).
+2. Simpan SorsHub_loader.lua di workspace (boleh di root atau di SorsHub_v9).
+3. Jalankan di executor:
+     loadstring(readfile("SorsHub_loader.lua"))()
+   atau kalau loader ada di dalam folder zip:
+     loadstring(readfile("SorsHub_v9/SorsHub_loader.lua"))()
+Loader otomatis mencari main, menyalin main + 10 pack ke folder SorsHub/
+(menimpa versi lama, jadi tidak perlu copy manual), lalu menjalankan main.
+Error compile main akan menyebut "SorsHub_main.lua:baris", bukan string acak.
